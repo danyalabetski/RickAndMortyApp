@@ -11,39 +11,39 @@ final class RMRequest {
     private let pathComponents: [String]
 
     private let queryParametrs: [URLQueryItem]
-    
+
     /// Constructed url for the api request in string format
     private var urlString: String {
         var string = Constants.baseUrl
         string += "/"
         string += endpoint.rawValue
-        
+
         if !pathComponents.isEmpty {
-            pathComponents.forEach({
+            pathComponents.forEach {
                 string += "/\($0)"
-            })
+            }
         }
-        
+
         if !queryParametrs.isEmpty {
             string += "?"
-            
-            let argumentString = queryParametrs.compactMap({
+
+            let argumentString = queryParametrs.compactMap {
                 guard let value = $0.value else { return nil }
                 return "\($0.name)=\(value)"
-            }).joined(separator: "&")
-            
+            }.joined(separator: "&")
+
             string += argumentString
         }
-        
+
         return string
     }
-    
+
     public var url: URL? {
-        return URL(string: urlString)
+        URL(string: urlString)
     }
-    
-    public let httpMrthod = "GET"
-    
+
+    public let httpMethod = "GET"
+
     // MARK: - Public
 
     init(endpoint: RMEndpoint, pathComponents: [String] = [], queryParametrs: [URLQueryItem] = []) {
@@ -51,4 +51,52 @@ final class RMRequest {
         self.pathComponents = pathComponents
         self.queryParametrs = queryParametrs
     }
+
+    convenience init?(url: URL) {
+        let string = url.absoluteString
+        if !string.contains(Constants.baseUrl) {
+            return nil
+        }
+
+        let trimmed = string.replacingOccurrences(of: Constants.baseUrl + "/", with: "")
+        if trimmed.contains("/") {
+            let components = trimmed.components(separatedBy: "/")
+            if !components.isEmpty {
+                let endpointString = components[0]
+                if let rmEndPoint = RMEndpoint(rawValue: endpointString) {
+                    self.init(endpoint: rmEndPoint)
+                    return
+                }
+            }
+        } else if trimmed.contains("?") {
+            let components = trimmed.components(separatedBy: "?")
+            if !components.isEmpty, components.count >= 2 {
+                let endpointString = components[0]
+                let queryItemsString = components[1]
+
+                let quearyItems: [URLQueryItem] = queryItemsString.components(separatedBy: "&").compactMap {
+                    guard $0.contains("=") else {
+                        return nil
+                    }
+
+                    let parts = $0.components(separatedBy: "=")
+
+                    return URLQueryItem(
+                        name: parts[0],
+                        value: parts[1]
+                    )
+                }
+                if let rmEndPoint = RMEndpoint(rawValue: endpointString) {
+                    self.init(endpoint: rmEndPoint, queryParametrs: quearyItems)
+                    return
+                }
+            }
+        }
+
+        return nil
+    }
+}
+
+extension RMRequest {
+    static let listCharactersRequest = RMRequest(endpoint: .character)
 }
