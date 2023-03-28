@@ -14,7 +14,7 @@ enum RMSettingsOption: CaseIterable {
         case .rateApp:
             return nil
         case .contactUs:
-            return URL(string: "https://iosacademy.io")
+            return URL(string: "https://www.linkedin.com/in/labetskydaniel/")
         case .terms:
             return URL(string: "https://iosacademy.io/terms")
         case .privacy:
